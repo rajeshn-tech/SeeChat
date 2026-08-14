@@ -1,0 +1,30 @@
+# Python generated artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+
+# Databases and local data
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+chat_logs/
+logs/
+
+# TLS/SSL Keys & Certificates
+*.pem
+key.pem
+cert.pem
+*.crt
+*.key
+
+# Local environment & secrets
+.env
+.env.local
+SEECHAT_SECRET_KEY
+venv/
+ENV/
+.idea/
+.vscode/
