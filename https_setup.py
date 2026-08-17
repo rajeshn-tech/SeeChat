@@ -1,5 +1,12 @@
+"""
+SeeChat Enterprise Studio Messenger - HTTPS & TLS Certificate Preparation Utility
+Consolidated HTTPS/TLS certificate generator and setup validator.
+"""
+
 import os
 import datetime
+import logging
+
 from cryptography import x509
 from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives import hashes
@@ -8,11 +15,20 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.x509 import DNSName, IPAddress
 import ipaddress
 
-def generate_self_signed_cert(cert_file='cert.pem', key_file='key.pem'):
+logger = logging.getLogger("seechat.https_setup")
+
+
+def ensure_https_certificates(cert_file="cert.pem", key_file="key.pem"):
+    """
+    Ensures that separate cert.pem and key.pem TLS files exist.
+    If existing certificates are present, overwrite is skipped to preserve stability.
+    If missing, generates a 2048-bit RSA self-signed TLS certificate valid for 10 years.
+    """
     if os.path.exists(cert_file) and os.path.exists(key_file):
-        print(f"[SECURITY] Existing TLS SSL certificates found ('{cert_file}', '{key_file}'). Overwrite skipped to preserve certificate stability.")
+        print(f"[SECURITY] Existing TLS/SSL certificates found ('{cert_file}', '{key_file}'). Overwrite skipped.")
         return cert_file, key_file
 
+    print(f"[HTTPS SETUP] Generating new development TLS certificate '{cert_file}' and private key '{key_file}'...")
     key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048,
@@ -56,8 +72,9 @@ def generate_self_signed_cert(cert_file='cert.pem', key_file='key.pem'):
     with open(cert_file, "wb") as f:
         f.write(cert.public_bytes(serialization.Encoding.PEM))
 
-    print(f"Generated SSL certificate '{cert_file}' and private key '{key_file}' successfully!")
+    print(f"[SUCCESS] TLS certificate '{cert_file}' and key '{key_file}' generated successfully!")
     return cert_file, key_file
 
+
 if __name__ == "__main__":
-    generate_self_signed_cert()
+    ensure_https_certificates()

@@ -14,7 +14,7 @@ from flask_socketio import SocketIO
 import database.db as db_core
 import database.users as db_users
 import database.birthdays as db_birthdays
-import generate_ssl
+import https_setup
 
 from socket_handlers.connection import register_connection_handlers
 from socket_handlers.messages import register_message_handlers
@@ -55,7 +55,7 @@ register_presence_handlers(socketio, sid_to_user, active_users, broadcast_online
 register_group_and_admin_handlers(socketio, sid_to_user, active_users, broadcast_online_users_fn)
 
 if __name__ == '__main__':
-    cert_path, key_path = generate_ssl.generate_self_signed_cert('cert.pem', 'key.pem')
+    cert_path, key_path = https_setup.ensure_https_certificates('cert.pem', 'key.pem')
     protocol = "https" if config.USE_SSL else "http"
     
     print("==================================================================")
