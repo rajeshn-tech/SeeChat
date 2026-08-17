@@ -625,7 +625,8 @@ socket.on('receive_direct_message', (msg) => {
   const chatKey = msg.is_broadcast ? `bcast_${msg.broadcast_group}` : (msg.sender === myUsername ? msg.recipient : msg.sender);
   if (!chatHistories[chatKey]) chatHistories[chatKey] = [];
   
-  if (!chatHistories[chatKey].some(m => m.message_id === msg.message_id)) {
+  const isDuplicateMsg = chatHistories[chatKey].some(m => m.message_id === msg.message_id);
+  if (!isDuplicateMsg) {
     chatHistories[chatKey].push(msg);
   }
 
@@ -640,12 +641,12 @@ socket.on('receive_direct_message', (msg) => {
         renderUsersList();
       }
     }
-  } else if (msg.sender !== myUsername && !msg.is_broadcast) {
+  } else if (!isDuplicateMsg && msg.sender !== myUsername && !msg.is_broadcast) {
     unreadCounts[msg.sender] = (unreadCounts[msg.sender] || 0) + 1;
     renderUsersList();
   }
 
-  if (msg.sender !== myUsername && !mutedUsers.includes(msg.sender)) {
+  if (!isDuplicateMsg && msg.sender !== myUsername && !mutedUsers.includes(msg.sender)) {
     if (document.hidden || !document.hasFocus()) {
       startTitleBlinking(msg.sender);
       showAutoDesktopNotification(msg.sender, msg.message);

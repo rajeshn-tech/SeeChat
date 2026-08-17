@@ -87,11 +87,7 @@ def register_message_handlers(socketio, sid_to_user, active_users):
         emit('message_sent_confirm', msg_payload)
 
         # Deliver to intended recipient (all active sockets/tabs for recipient)
-        socketio.emit('receive_direct_message', msg_payload, room=recipient)
         socketio.emit('receive_direct_message', msg_payload, room=f"user_{recipient}")
-        recipient_user = active_users.get(recipient)
-        if recipient_user and recipient_user.get('socket_id'):
-            socketio.emit('receive_direct_message', msg_payload, room=recipient_user['socket_id'])
 
     @socketio.on('toggle_message_reaction')
     def handle_toggle_reaction(data):
@@ -114,10 +110,8 @@ def register_message_handlers(socketio, sid_to_user, active_users):
             s = target_msg['sender']
             r = target_msg['recipient']
 
-            socketio.emit('message_reactions_updated', reaction_data, room=s)
             socketio.emit('message_reactions_updated', reaction_data, room=f"user_{s}")
             if r != s:
-                socketio.emit('message_reactions_updated', reaction_data, room=r)
                 socketio.emit('message_reactions_updated', reaction_data, room=f"user_{r}")
 
     @socketio.on('edit_message')
@@ -153,10 +147,8 @@ def register_message_handlers(socketio, sid_to_user, active_users):
             s = target_msg['sender']
             r = target_msg['recipient']
 
-            socketio.emit('message_edited', edit_event_data, room=s)
             socketio.emit('message_edited', edit_event_data, room=f"user_{s}")
             if r != s:
-                socketio.emit('message_edited', edit_event_data, room=r)
                 socketio.emit('message_edited', edit_event_data, room=f"user_{r}")
 
     @socketio.on('delete_message')
@@ -188,10 +180,8 @@ def register_message_handlers(socketio, sid_to_user, active_users):
         s = target_msg['sender']
         r = target_msg['recipient']
 
-        socketio.emit('message_deleted', delete_event_data, room=s)
         socketio.emit('message_deleted', delete_event_data, room=f"user_{s}")
         if r != s:
-            socketio.emit('message_deleted', delete_event_data, room=r)
             socketio.emit('message_deleted', delete_event_data, room=f"user_{r}")
 
     @socketio.on('message_delivered_ack')
@@ -211,11 +201,7 @@ def register_message_handlers(socketio, sid_to_user, active_users):
                 'status': 'delivered',
                 'recipient': recipient
             }
-            socketio.emit('message_status_updated', status_payload, room=sender)
             socketio.emit('message_status_updated', status_payload, room=f"user_{sender}")
-            s_user = active_users.get(sender)
-            if s_user and s_user.get('socket_id'):
-                socketio.emit('message_status_updated', status_payload, room=s_user['socket_id'])
 
     @socketio.on('mark_conversation_read')
     def handle_mark_read(data):
@@ -232,14 +218,9 @@ def register_message_handlers(socketio, sid_to_user, active_users):
                 'message_ids': updated_ids
             }
             # Inform sender in real time across all active sockets/tabs
-            socketio.emit('messages_marked_read', read_payload, room=target_sender)
             socketio.emit('messages_marked_read', read_payload, room=f"user_{target_sender}")
-            s_user = active_users.get(target_sender)
-            if s_user and s_user.get('socket_id'):
-                socketio.emit('messages_marked_read', read_payload, room=s_user['socket_id'])
 
             # Sync unread/read state back to recipient sockets/tabs as well
-            socketio.emit('messages_marked_read', read_payload, room=recipient)
             socketio.emit('messages_marked_read', read_payload, room=f"user_{recipient}")
 
     @socketio.on('typing_start')
@@ -247,7 +228,6 @@ def register_message_handlers(socketio, sid_to_user, active_users):
         sender = sid_to_user.get(request.sid)
         recipient = data.get('recipient')
         if sender and recipient:
-            socketio.emit('user_typing', {'sender': sender}, room=recipient)
             socketio.emit('user_typing', {'sender': sender}, room=f"user_{recipient}")
 
     @socketio.on('typing_stop')
@@ -255,7 +235,6 @@ def register_message_handlers(socketio, sid_to_user, active_users):
         sender = sid_to_user.get(request.sid)
         recipient = data.get('recipient')
         if sender and recipient:
-            socketio.emit('user_stop_typing', {'sender': sender}, room=recipient)
             socketio.emit('user_stop_typing', {'sender': sender}, room=f"user_{recipient}")
 
     @socketio.on('send_broadcast_message')
