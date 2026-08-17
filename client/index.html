@@ -53,13 +53,9 @@
         <div class="user-avatar" id="my-avatar">S</div>
         <div class="user-info">
           <div class="user-name" id="my-username">SeeChat_User</div>
-          <select id="my-mood-select" class="mood-select" title="Set Availability Mood Status">
-            <option value="Available">🟢 Available</option>
-            <option value="Busy">🔴 Busy</option>
-            <option value="In Meeting">📅 In Meeting</option>
-            <option value="On Break">☕ On Break</option>
-            <option value="Rendering 😄">💻 Rendering 😄</option>
-          </select>
+          <div class="user-status-pill" id="my-status-pill" title="Automatic Real-Time Presence Status">
+            <span id="my-status-indicator">🟢 Available</span>
+          </div>
         </div>
         <button class="btn btn-sm btn-secondary" id="btn-logout" title="Logout">Logout</button>
       </div>
@@ -289,6 +285,34 @@
           </div>
         </div>
 
+        <!-- 3. BIRTHDAY MANAGEMENT CONSOLE -->
+        <div class="admin-card full-width-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h4>🎂 Team Birthday Management</h4>
+            <button class="btn btn-secondary btn-sm" id="btn-broadcast-birthdays-now">🎉 Broadcast Today's Birthdays</button>
+          </div>
+          <div class="input-row" style="margin-bottom: 14px;">
+            <input type="text" id="bday-add-username" placeholder="Select or enter username..." style="flex:1;">
+            <input type="date" id="bday-add-date" class="bday-date-input" title="Select birth date from calendar" style="width:190px;">
+            <button class="btn btn-primary" id="btn-add-bday">+ Save Birthday</button>
+          </div>
+          <div class="admin-users-table-container" style="max-height:160px;">
+            <table class="admin-users-table">
+              <thead>
+                <tr>
+                  <th>USERNAME</th>
+                  <th>BIRTH DATE (MM-DD)</th>
+                  <th>ADDED ON</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody id="admin-bday-table-body">
+                <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No birthday records found.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- 3. USER MANAGEMENT TABLE -->
         <div class="admin-card full-width-card">
           <h4>User Management</h4>
@@ -380,8 +404,6 @@
   </div>
 
 <!-- DELETE CONFIRMATION MODAL -->
-
-<!-- DELETE CONFIRMATION MODAL -->
 <div id="delete-confirm-modal" class="modal-overlay hidden">
   <div class="modal-card">
     <div class="modal-header">
@@ -396,6 +418,90 @@
     </div>
   </div>
 </div>
+
+  <!-- STUDIO ANNOUNCEMENT BROADCAST MODAL -->
+  <div id="announcement-modal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 440px; padding: 26px 24px; text-align: center;">
+      <div style="font-size: 2.5rem; margin-bottom: 8px;">📢</div>
+      <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--primary-accent); margin-bottom: 4px;" id="announcement-modal-title">Studio Announcement</h3>
+      <div style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 16px;" id="announcement-modal-meta">From Admin • Just now</div>
+      <div style="background: #181825; border: 1px solid var(--border-color); border-radius: 10px; padding: 14px 16px; color: var(--text-main); font-size: 0.94rem; line-height: 1.5; text-align: left; word-break: break-word; margin-bottom: 20px;" id="announcement-modal-body">
+        Announcement text content...
+      </div>
+      <button class="btn btn-primary btn-block" id="btn-close-announcement-modal">Got It 👍</button>
+    </div>
+  </div>
+
+  <!-- FESTIVE BIRTHDAY CELEBRATION MODAL OVERLAY -->
+  <div id="birthday-modal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 480px; padding: 26px 22px; text-align: center; border-color: rgba(247, 212, 136, 0.45); box-shadow: 0 0 30px rgba(247, 212, 136, 0.25);">
+      <div style="font-size: 3rem; margin-bottom: 6px;">🎂🎈🎉</div>
+      <h3 style="font-size: 1.35rem; font-weight: 800; color: #f7d488; margin-bottom: 4px;" id="birthday-modal-title">Happy Birthday!</h3>
+      <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;" id="birthday-modal-subtitle">Today is a special celebration day in SeeChat Studio!</div>
+      
+      <!-- 1. SENDER VIEW: PROFESSIONAL 3-OPTION WISH CARDS -->
+      <div id="birthday-sender-view">
+        <div style="background: rgba(247, 212, 136, 0.08); border: 1px solid rgba(247, 212, 136, 0.25); border-radius: 10px; padding: 12px 14px; color: var(--text-main); font-size: 0.95rem; font-weight: 700; margin-bottom: 16px;" id="birthday-modal-name">
+          🎉 Today is Demo_User's Birthday! 🎂
+        </div>
+
+        <div style="text-align: left; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 10px;">SELECT A PROFESSIONAL BIRTHDAY WISH:</div>
+        
+        <div style="display: flex; flex-direction: column; gap: 8px; text-align: left; margin-bottom: 20px;">
+          <label style="background: #181825; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; font-size: 0.86rem; color: var(--text-main); cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+            <input type="radio" name="bday_wish_opt" value="🎉 Wishing you a happy birthday and a successful year ahead!" checked style="margin-top: 3px;">
+            <span>🎉 Wishing you a happy birthday and a successful year ahead!</span>
+          </label>
+
+          <label style="background: #181825; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; font-size: 0.86rem; color: var(--text-main); cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+            <input type="radio" name="bday_wish_opt" value="🎂 Happy Birthday! May your day be filled with happiness and great achievements." style="margin-top: 3px;">
+            <span>🎂 Happy Birthday! May your day be filled with happiness and great achievements.</span>
+          </label>
+
+          <label style="background: #181825; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; font-size: 0.86rem; color: var(--text-main); cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+            <input type="radio" name="bday_wish_opt" value="✨ Wishing you a wonderful birthday and continued success in all your endeavors!" style="margin-top: 3px;">
+            <span>✨ Wishing you a wonderful birthday and continued success in all your endeavors!</span>
+          </label>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: center;">
+          <button class="btn btn-secondary" id="btn-close-birthday-modal" style="flex:1;">Close</button>
+          <button class="btn btn-warning" id="btn-send-professional-wish" style="flex:1.5;">Send Birthday Wish 🎁</button>
+        </div>
+      </div>
+
+      <!-- 2. RECIPIENT VIEW: RECEIVED WISHES & PROFESSIONAL THANK-YOU REPLY CARDS -->
+      <div id="birthday-recipient-view" class="hidden">
+        <div style="text-align: left; font-size: 0.82rem; font-weight: 700; color: #f7d488; margin-bottom: 10px;">RECEIVED WISHES FROM COLLEAGUES:</div>
+        <div id="birthday-wishes-received-container" style="max-height: 180px; overflow-y: auto; text-align: left; margin-bottom: 16px;">
+          <!-- Wishes populated dynamically -->
+        </div>
+
+        <div style="text-align: left; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 10px;">SELECT A PROFESSIONAL THANK-YOU RESPONSE:</div>
+        <div style="display: flex; flex-direction: column; gap: 8px; text-align: left; margin-bottom: 20px;">
+          <label style="background: #181825; border: 1px solid var(--border-color); border-radius: 8px; padding: 9px 11px; font-size: 0.84rem; color: var(--text-main); cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+            <input type="radio" name="bday_thanks_opt" value="🙏 Thank you so much for the thoughtful birthday wishes! Warm regards." checked style="margin-top: 3px;">
+            <span>🙏 Thank you so much for the thoughtful birthday wishes! Warm regards.</span>
+          </label>
+
+          <label style="background: #181825; border: 1px solid var(--border-color); border-radius: 8px; padding: 9px 11px; font-size: 0.84rem; color: var(--text-main); cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+            <input type="radio" name="bday_thanks_opt" value="❤️ Thank you for your kind birthday wishes! Truly appreciate your support." style="margin-top: 3px;">
+            <span>❤️ Thank you for your kind birthday wishes! Truly appreciate your support.</span>
+          </label>
+
+          <label style="background: #181825; border: 1px solid var(--border-color); border-radius: 8px; padding: 9px 11px; font-size: 0.84rem; color: var(--text-main); cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+            <input type="radio" name="bday_thanks_opt" value="✨ Thank you very much for your wonderful wishes! Have a great day ahead." style="margin-top: 3px;">
+            <span>✨ Thank you very much for your wonderful wishes! Have a great day ahead.</span>
+          </label>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: center;">
+          <button class="btn btn-secondary" id="btn-close-birthday-recipient-modal" style="flex:1;">Close</button>
+          <button class="btn btn-primary" id="btn-send-thank-you-all" style="flex:1.5;">Thank Everyone ❤️</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

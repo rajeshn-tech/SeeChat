@@ -740,9 +740,171 @@ socket.on('user_stop_typing', ({ sender }) => {
   }
 });
 
-socket.on('receive_studio_announcement', ({ sender, message }) => {
+socket.on('receive_studio_announcement', ({ sender, message, timestamp }) => {
   showToast(`📢 Announcement from ${sender}: "${message}"`, 'info');
+
+  const annModal = document.getElementById('announcement-modal');
+  const annMeta = document.getElementById('announcement-modal-meta');
+  const annBody = document.getElementById('announcement-modal-body');
+  if (annModal && annBody) {
+    if (annMeta) annMeta.textContent = `From ${sender} • ${timestamp || 'Just now'}`;
+    annBody.textContent = message;
+    annModal.classList.remove('hidden');
+  }
 });
+
+let currentBirthdayTargetUser = '';
+let myReceivedBirthdayWishes = [];
+
+socket.on('receive_birthday_announcement', ({ birthday_users, message }) => {
+  showToast(message, 'info');
+
+  const bdayModal = document.getElementById('birthday-modal');
+  const bdayName = document.getElementById('birthday-modal-name');
+  const bdaySenderView = document.getElementById('birthday-sender-view');
+  const bdayRecipientView = document.getElementById('birthday-recipient-view');
+
+  if (bdayModal) {
+    currentBirthdayTargetUser = (birthday_users && birthday_users.length > 0) ? birthday_users[0] : '';
+    const isMyBirthday = birthday_users && birthday_users.includes(myUsername);
+
+    if (isMyBirthday) {
+      if (bdaySenderView) bdaySenderView.classList.add('hidden');
+      if (bdayRecipientView) bdayRecipientView.classList.remove('hidden');
+      socket.emit('get_my_birthday_wishes');
+    } else {
+      if (bdayRecipientView) bdayRecipientView.classList.add('hidden');
+      if (bdaySenderView) bdaySenderView.classList.remove('hidden');
+      if (bdayName) {
+        const nameStr = (birthday_users && birthday_users.length > 0) ? birthday_users.join(', ') : 'Team Member';
+        bdayName.textContent = `🎉 Today is ${nameStr}'s Birthday! 🎂🎈`;
+      }
+    }
+    bdayModal.classList.remove('hidden');
+  }
+});
+
+socket.on('my_birthday_wishes_list', ({ wishes }) => {
+  myReceivedBirthdayWishes = wishes || [];
+  renderReceivedBirthdayWishes();
+});
+
+socket.on('receive_birthday_wish_notification', ({ sender, wish_text, wishes }) => {
+  showToast(`🎂 Birthday Wish from ${sender}: "${wish_text}"`, 'info');
+  myReceivedBirthdayWishes = wishes || [];
+  renderReceivedBirthdayWishes();
+});
+
+socket.on('birthday_wish_sent_response', ({ success, message }) => {
+  showToast(message, success ? 'success' : 'error');
+  if (success) {
+    const bdayModal = document.getElementById('birthday-modal');
+    if (bdayModal) bdayModal.classList.add('hidden');
+  }
+});
+
+socket.on('receive_birthday_thank_you_notification', ({ birthday_user, thank_you_text }) => {
+  showToast(`❤️ Thank-You response from ${birthday_user}: "${thank_you_text}"`, 'success');
+});
+
+socket.on('birthday_thank_you_sent_response', ({ success, message }) => {
+  showToast(message, success ? 'success' : 'error');
+  if (success) {
+    const bdayModal = document.getElementById('birthday-modal');
+    if (bdayModal) bdayModal.classList.add('hidden');
+  }
+});
+
+function renderReceivedBirthdayWishes() {
+  const container = document.getElementById('birthday-wishes-received-container');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!myReceivedBirthdayWishes || myReceivedBirthdayWishes.length === 0) {
+    container.innerHTML = '<div style="font-size:0.85rem; color:var(--text-muted); padding:10px 0;">No birthday wishes received yet.</div>';
+    return;
+  }
+
+  myReceivedBirthdayWishes.forEach((w) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:#181825; border:1px solid var(--border-color); border-radius:8px; padding:10px 12px; margin-bottom:8px;';
+    const statusText = w.thank_you_sent ? '<span style="color:#a6e3a1; font-size:0.75rem; font-weight:700;">✓ Thanked</span>' : '<span style="color:#f7d488; font-size:0.75rem; font-weight:700;">Pending Thanks</span>';
+    div.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <strong style="color:var(--primary-accent); font-size:0.88rem;">${escapeHtml(w.sender)}</strong>
+        ${statusText}
+      </div>
+      <div style="font-size:0.85rem; color:var(--text-main); font-style:italic;">"${escapeHtml(w.wish_text)}"</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+const btnSendProfessionalWish = document.getElementById('btn-send-professional-wish');
+if (btnSendProfessionalWish) {
+  btnSendProfessionalWish.addEventListener('click', () => {
+    const selectedRadio = document.querySelector('input[name="bday_wish_opt"]:checked');
+    if (!selectedRadio) {
+      showToast("Please select a professional birthday wish.", "error");
+      return;
+    }
+    const wishText = selectedRadio.value;
+    if (currentBirthdayTargetUser) {
+      socket.emit('send_birthday_wish', {
+        birthday_user: currentBirthdayTargetUser,
+        wish_text: wishText
+      });
+    }
+  });
+}
+
+const btnSendThankYouAll = document.getElementById('btn-send-thank-you-all');
+if (btnSendThankYouAll) {
+  btnSendThankYouAll.addEventListener('click', () => {
+    const selectedRadio = document.querySelector('input[name="bday_thanks_opt"]:checked');
+    if (!selectedRadio) {
+      showToast("Please select a professional thank-you response.", "error");
+      return;
+    }
+    const thanksText = selectedRadio.value;
+    if (myReceivedBirthdayWishes && myReceivedBirthdayWishes.length > 0) {
+      myReceivedBirthdayWishes.forEach((w) => {
+        if (!w.thank_you_sent) {
+          socket.emit('send_birthday_thank_you', {
+            wish_id: w.id,
+            thank_you_text: thanksText
+          });
+        }
+      });
+    } else {
+      showToast("No pending wishes to respond to.", "info");
+    }
+  });
+}
+
+const btnCloseAnnModal = document.getElementById('btn-close-announcement-modal');
+if (btnCloseAnnModal) {
+  btnCloseAnnModal.addEventListener('click', () => {
+    const annModal = document.getElementById('announcement-modal');
+    if (annModal) annModal.classList.add('hidden');
+  });
+}
+
+const btnCloseBdayModal = document.getElementById('btn-close-birthday-modal');
+if (btnCloseBdayModal) {
+  btnCloseBdayModal.addEventListener('click', () => {
+    const bdayModal = document.getElementById('birthday-modal');
+    if (bdayModal) bdayModal.classList.add('hidden');
+  });
+}
+
+const btnCloseBdayRecipientModal = document.getElementById('btn-close-birthday-recipient-modal');
+if (btnCloseBdayRecipientModal) {
+  btnCloseBdayRecipientModal.addEventListener('click', () => {
+    const bdayModal = document.getElementById('birthday-modal');
+    if (bdayModal) bdayModal.classList.add('hidden');
+  });
+}
 
 socket.on('chat_cleared', ({ target }) => {
   const chatKey = `bcast_${target}` in chatHistories ? `bcast_${target}` : target;
@@ -827,10 +989,10 @@ socket.on('admin_users_list', (users) => {
     let statusBadgeHtml = '';
     if (isDisabled) {
       statusBadgeHtml = '<span class="status-badge disabled">🔴 Disabled</span>';
-    } else if (isOnline) {
-      statusBadgeHtml = '<span class="status-badge online">🟢 Online</span>';
+    } else if (isOnline && u.mood_status !== 'Away') {
+      statusBadgeHtml = '<span class="status-badge online">🟢 Available</span>';
     } else {
-      statusBadgeHtml = '<span class="status-badge offline">⚪ Offline</span>';
+      statusBadgeHtml = '<span class="status-badge offline" style="color:#f9e2af; background:rgba(249, 226, 175, 0.12); border:1px solid rgba(249, 226, 175, 0.25);">🟡 Away</span>';
     }
 
     const isAdmin = u.role === 'admin';
@@ -936,6 +1098,80 @@ if (btnSendStudioNotice) {
   });
 }
 
+// --- BIRTHDAY MANAGEMENT ADMIN PANEL HANDLERS ---
+const adminBdayTableBody = document.getElementById('admin-bday-table-body');
+const bdayAddUsername = document.getElementById('bday-add-username');
+const bdayAddDate = document.getElementById('bday-add-date');
+const btnAddBday = document.getElementById('btn-add-bday');
+const btnBroadcastBdaysNow = document.getElementById('btn-broadcast-birthdays-now');
+
+socket.on('admin_birthdays_list', (bdays) => {
+  if (!adminBdayTableBody) return;
+  adminBdayTableBody.innerHTML = '';
+  if (!bdays || bdays.length === 0) {
+    adminBdayTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No birthday records found.</td></tr>';
+    return;
+  }
+
+  bdays.forEach((b) => {
+    const tr = document.createElement('tr');
+    const createdStr = b.created_at ? b.created_at.split(' ')[0] : 'Today';
+    tr.innerHTML = `
+      <td><strong>${escapeHtml(b.username)}</strong></td>
+      <td><span style="color:#f7d488; font-weight:700;">🎂 ${escapeHtml(b.birth_date)}</span></td>
+      <td><span style="color:var(--text-muted); font-size:0.8rem;">${escapeHtml(createdStr)}</span></td>
+      <td>
+        <button class="btn btn-sm btn-danger btn-admin-delete-bday" data-uname="${escapeHtml(b.username)}">Delete</button>
+      </td>
+    `;
+    adminBdayTableBody.appendChild(tr);
+  });
+
+  document.querySelectorAll('.btn-admin-delete-bday').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetUser = btn.dataset.uname;
+      if (targetUser && confirm(`Remove birthday record for "${targetUser}"?`)) {
+        socket.emit('admin_delete_birthday', { username: targetUser });
+      }
+    });
+  });
+});
+
+if (btnAddBday) {
+  btnAddBday.addEventListener('click', () => {
+    const uname = bdayAddUsername ? bdayAddUsername.value.trim() : '';
+    let bdate = bdayAddDate ? bdayAddDate.value.trim() : '';
+    if (!uname || !bdate) {
+      showToast("Please enter Username and select a Birth Date from the Calendar.", "error");
+      return;
+    }
+
+    if (bdate.includes('-')) {
+      const parts = bdate.split('-');
+      if (parts.length === 3) {
+        bdate = `${parts[1]}-${parts[2]}`;
+      }
+    }
+
+    socket.emit('admin_set_birthday', { username: uname, birth_date: bdate });
+    if (bdayAddUsername) bdayAddUsername.value = '';
+    if (bdayAddDate) bdayAddDate.value = '';
+  });
+}
+
+if (btnBroadcastBdaysNow) {
+  btnBroadcastBdaysNow.addEventListener('click', () => {
+    socket.emit('admin_broadcast_birthdays');
+  });
+}
+
+if (btnOpenAdminPanel) {
+  btnOpenAdminPanel.addEventListener('click', () => {
+    socket.emit('admin_get_birthdays');
+  });
+}
+
 // --- 5. UI RENDERING & CHAT REQUEST OVERLAY ---
 function renderUsersList() {
   if (!usersListEl) return;
@@ -975,7 +1211,14 @@ function renderUsersList() {
     const unreadCnt = unreadCounts[u.username] || 0;
     const hasUnread = unreadCnt > 0;
     const unreadBadgeHtml = hasUnread ? `<span class="unread-badge">${unreadCnt > 99 ? '99+' : unreadCnt}</span>` : '';
-    const moodHtml = `<span class="user-mood" style="font-size:0.75rem; color:var(--text-muted); opacity:0.8; margin-left:6px;">${escapeHtml(u.mood_status || 'Available')}</span>`;
+
+    const isOnline = Boolean(u.is_online);
+    const isAvailable = isOnline && u.mood_status !== 'Away';
+
+    let statusBadgeText = isAvailable ? '🟢 Available' : '🟡 Away';
+    let statusColor = isAvailable ? '#a6e3a1' : '#f9e2af';
+
+    const moodHtml = `<span class="user-mood" style="font-size:0.75rem; color:${statusColor}; font-weight:600; margin-left:6px;">${statusBadgeText}</span>`;
 
     const li = document.createElement('li');
     li.className = `list-item ${currentTarget && currentTarget.name === u.username ? 'active' : ''} ${isPinned ? 'pinned' : ''} ${hasUnread ? 'has-unread' : ''}`;
@@ -1834,3 +2077,35 @@ function escapeHtml(text) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
   });
 }
+
+// --- AUTOMATIC REAL-TIME PRESENCE DETECTOR (AVAILABLE vs AWAY) ---
+function updateMyAutoPresence(isOnline) {
+  const indicatorEl = document.getElementById('my-status-indicator');
+  const pillEl = document.getElementById('my-status-pill');
+
+  if (indicatorEl) {
+    if (!isOnline) {
+      indicatorEl.textContent = '🟡 Away';
+      if (pillEl) {
+        pillEl.style.color = '#f9e2af';
+        pillEl.style.borderColor = 'rgba(249, 226, 175, 0.25)';
+        pillEl.style.background = 'rgba(249, 226, 175, 0.12)';
+      }
+    } else {
+      indicatorEl.textContent = '🟢 Available';
+      if (pillEl) {
+        pillEl.style.color = '#a6e3a1';
+        pillEl.style.borderColor = 'rgba(166, 227, 161, 0.25)';
+        pillEl.style.background = 'rgba(166, 227, 161, 0.12)';
+      }
+    }
+  }
+}
+
+socket.on('connect', () => {
+  updateMyAutoPresence(true);
+});
+
+socket.on('disconnect', () => {
+  updateMyAutoPresence(false);
+});

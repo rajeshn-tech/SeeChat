@@ -13,6 +13,7 @@ from flask_socketio import SocketIO
 
 import database.db as db_core
 import database.users as db_users
+import database.birthdays as db_birthdays
 import generate_ssl
 
 from socket_handlers.connection import register_connection_handlers
@@ -37,17 +38,14 @@ active_users = {}    # username -> { socket_id, ip, status, role }
 def index():
     return send_from_directory('client', 'index.html')
 
-@app.route('/presentation')
-def presentation_page():
-    return send_from_directory('client', 'presentation.html')
-
 @app.route('/<path:path>')
 def serve_static(path):
     return send_from_directory('client', path)
 
-# Initialize Database Schema & Seed Default Users
+# Initialize Database Schema & Seed Default Users & Sample Birthdays
 db_core.init_db()
 db_users.seed_default_users()
+db_birthdays.seed_default_birthdays()
 
 # Register Modular Socket.IO Handlers
 broadcast_online_users_fn = register_connection_handlers(socketio, sid_to_user, active_users)

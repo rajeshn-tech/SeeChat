@@ -109,7 +109,7 @@ def register_connection_handlers(socketio, sid_to_user, active_users):
         # Send login success confirmation & initial state
         unread_counts = db_messages.get_unread_counts(authenticated_user)
         user_info = db_users.get_user_by_username(authenticated_user)
-        mood_status = user_info.get('mood_status', 'Available') if user_info else 'Available'
+        mood_status = 'Available'
 
         emit('login_success', {
             'username': authenticated_user, 
@@ -123,6 +123,20 @@ def register_connection_handlers(socketio, sid_to_user, active_users):
         broadcast_online_users(immediate=True)
         groups = db_groups.get_broadcast_groups()
         emit('broadcast_groups_list', groups)
+
+        # Check today's birthdays and send birthday popup notification on login
+        try:
+            import database.birthdays as db_birthdays
+            today_bday_list = db_birthdays.get_today_birthdays()
+            if today_bday_list:
+                bday_names = [b['username'] for b in today_bday_list]
+                emit('receive_birthday_announcement', {
+                    'birthday_users': bday_names,
+                    'message': f"🎉 Today is {', '.join(bday_names)}'s Birthday! Wish them a Happy Birthday! 🎂🎈",
+                    'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+                })
+        except Exception as e:
+            logger.warning("Birthday check on login warning: %s", e)
 
     @socketio.on('disconnect')
     def handle_disconnect():
@@ -138,6 +152,7 @@ def register_connection_handlers(socketio, sid_to_user, active_users):
                 try:
                     del active_users[uname]
                     db_users.update_user_status(uname, '127.0.0.1', 'offline')
+                    db_users.update_user_mood(uname, 'Away')
                 except Exception as e:
                     logger.warning("Disconnect DB update warning for %s: %s", uname, e)
                 broadcast_online_users(immediate=False)

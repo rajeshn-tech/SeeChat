@@ -97,8 +97,8 @@ def update_user_status(username, ip_address, status='online'):
     conn.commit()
     conn.close()
 
-def update_user_mood_status(username, mood_status):
-    VALID_MOODS = ['Available', 'Busy', 'In Meeting', 'On Break', 'Rendering 😄']
+def update_user_mood(username, mood_status):
+    VALID_MOODS = ['Available', 'Away']
     if mood_status not in VALID_MOODS:
         mood_status = 'Available'
         
@@ -108,6 +108,8 @@ def update_user_mood_status(username, mood_status):
     conn.commit()
     conn.close()
     return True, mood_status
+
+update_user_mood_status = update_user_mood
 
 def toggle_user_disabled(username):
     conn, db_engine = get_connection()

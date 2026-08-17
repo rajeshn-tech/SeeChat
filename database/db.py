@@ -122,6 +122,25 @@ def init_db():
                 PRIMARY KEY (username, target)
             )
         """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS birthdays (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                birth_date TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS birthday_wishes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                birthday_user TEXT NOT NULL,
+                sender TEXT NOT NULL,
+                wish_text TEXT NOT NULL,
+                thank_you_text TEXT DEFAULT '',
+                thank_you_sent INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
         
         # Safely migrate existing tables if columns missing
         cursor.execute("PRAGMA table_info(users);")

@@ -154,6 +154,18 @@ body {
   flex: 1;
 }
 
+.user-status-pill {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #a6e3a1;
+  background: rgba(166, 227, 161, 0.12);
+  border: 1px solid rgba(166, 227, 161, 0.25);
+  border-radius: 6px;
+  padding: 2px 8px;
+  display: inline-block;
+  margin-top: 2px;
+}
+
 /* SEARCH BAR */
 .search-container {
   padding: 12px 16px;
@@ -284,6 +296,31 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 22px;
+}
+
+.bday-date-input {
+  background: #181825;
+  color: #cdd6f4;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bday-date-input::-webkit-calendar-picker-indicator {
+  filter: invert(0.8) sepia(0.8) saturate(3) hue-rotate(10deg);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.bday-date-input:focus {
+  border-color: #f7d488;
+  box-shadow: 0 0 10px rgba(247, 212, 136, 0.2);
 }
 
 .input-row {

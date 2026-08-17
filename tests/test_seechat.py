@@ -288,10 +288,10 @@ class TestSeeChatCompleteSecurityAudit(unittest.TestCase):
 
     def test_31_user_mood_status_update(self):
         """31. User presence mood status update validation"""
-        ok, mood = db_users.update_user_mood_status("User_A", "Rendering 😄")
+        ok, mood = db_users.update_user_mood_status("User_A", "Away")
         self.assertTrue(ok)
         user_info = db_users.get_user_by_username("User_A")
-        self.assertEqual(user_info['mood_status'], "Rendering 😄")
+        self.assertEqual(user_info['mood_status'], "Away")
 
     def test_32_per_user_chat_clear_isolation(self):
         """32. Per-user chat clear isolation: clearing chat hides history for requesting user only, partner retains full history"""
@@ -472,6 +472,57 @@ class TestSeeChatCompleteSecurityAudit(unittest.TestCase):
         self.assertEqual(del_row['original_message'], "Hello Admin!")
         self.assertEqual(del_row['deleted_by'], "Admin")
         conn.close()
+
+    def test_36_birthday_system(self):
+        import database.birthdays as db_birthdays
+        from datetime import datetime
+        today_mm_dd = datetime.now().strftime('%m-%d')
+        
+        # Set birthday for Demo_User on today's date
+        ok, msg = db_birthdays.set_user_birthday("Demo_User", today_mm_dd)
+        self.assertTrue(ok)
+        
+        # Verify get_today_birthdays matches Demo_User
+        today_list = db_birthdays.get_today_birthdays()
+        usernames = [b['username'] for b in today_list]
+        self.assertIn("Demo_User", usernames)
+        
+        # Verify get_all_birthdays
+        all_list = db_birthdays.get_all_birthdays()
+        self.assertGreaterEqual(len(all_list), 1)
+        
+        # Delete birthday record
+        ok_del, msg_del = db_birthdays.delete_user_birthday("Demo_User")
+        self.assertTrue(ok_del)
+
+    def test_37_card_based_birthday_wishes(self):
+        import database.birthdays as db_birthdays
+        
+        # Admin sends professional wish 1 to Demo_User inside Card
+        wish_text = "🎉 Wishing you a happy birthday and a successful year ahead!"
+        ok_w, wish_id = db_birthdays.add_birthday_wish("Demo_User", "Admin", wish_text)
+        self.assertTrue(ok_w)
+        self.assertIsNotNone(wish_id)
+        
+        # Verify Demo_User receives the wish inside Card inbox
+        wishes = db_birthdays.get_wishes_for_user("Demo_User")
+        my_wish = next((w for w in wishes if w['id'] == wish_id), None)
+        self.assertIsNotNone(my_wish)
+        self.assertEqual(my_wish['sender'], "Admin")
+        self.assertEqual(my_wish['wish_text'], wish_text)
+        self.assertEqual(my_wish['thank_you_sent'], 0)
+        
+        # Demo_User responds with professional thank-you option 1 inside Card
+        thanks_text = "🙏 Thank you so much for the thoughtful birthday wishes! Warm regards."
+        ok_t, wishing_sender, bday_user = db_birthdays.send_thank_you_for_wish(wish_id, thanks_text)
+        self.assertTrue(ok_t)
+        self.assertEqual(wishing_sender, "Admin")
+        self.assertEqual(bday_user, "Demo_User")
+        
+        # Verify wish is now marked thanked
+        wishes_after = db_birthdays.get_wishes_for_user("Demo_User")
+        self.assertEqual(wishes_after[0]['thank_you_sent'], 1)
+        self.assertEqual(wishes_after[0]['thank_you_text'], thanks_text)
 
 if __name__ == '__main__':
     unittest.main()
